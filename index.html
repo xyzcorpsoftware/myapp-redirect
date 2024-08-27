@@ -26,7 +26,7 @@
                 } else if (/Android/i.test(navigator.userAgent)) {
                     window.location.href = "https://play.google.com/store/apps/details?id=io.xyz.xexpressapp";
                 } else {
-                    alert("This device is not supported.");
+                    alert("This device is not supported. code: " + code);
                 }
             }, 1500);
         }
