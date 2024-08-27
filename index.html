@@ -16,6 +16,9 @@
         }
 
         window.onload = function() {
+            const params = getQueryParams();
+            const code = params.code;
+            
             window.location.href = "myapp://xyzcorp.io/coupon?code=" + code;
             setTimeout(function() {
                 if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
