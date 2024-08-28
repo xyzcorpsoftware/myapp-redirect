@@ -45,7 +45,11 @@
             const params = getQueryParams();
             const code = params.code;
             
-            window.location.href = "myapp://xyzcorp.io/coupon?code=" + code;
+            try {
+                window.location.href = "myapp://xyzcorp.io/coupon?code=" + code;
+            } catch (error) {
+                alert("라운지엑스앱이 설치되어 있지 않아요\n잠시 후 앱 스토어로 이동할 예정이에요")
+            }
             setTimeout(function() {
                 if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                     window.location.href = "https://apps.apple.com/app/1660500008";
