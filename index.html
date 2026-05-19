@@ -55,13 +55,9 @@
         window.onload = function() {
             const params = getQueryParams();
             const code = params.code || "";
-            try {
-                window.location.href = REDIRECT_CONSTANTS.UNIVERSAL_LINK_BASE + code;
-            } catch (error) {
-                alert(REDIRECT_CONSTANTS.MSG_APP_NOT_INSTALLED);
-            }
 
-            setTimeout(function() {
+            // 3초 뒤 스토어 이동 타이머
+            let fallbackTimer = setTimeout(function() {
                 const userAgent = navigator.userAgent;
                 if (/iPhone|iPad|iPod/i.test(userAgent)) {
                     window.location.href = REDIRECT_CONSTANTS.APP_STORE_URL_IOS;
@@ -71,6 +67,20 @@
                     alert(REDIRECT_CONSTANTS.MSG_UNSUPPORTED_DEVICE + code);
                 }
             }, REDIRECT_CONSTANTS.FALLBACK_DELAY_MS);
+
+            // 앱 켜지면 타이머 취소
+            document.addEventListener("visibilitychange", function () {
+                if (document.visibilityState === "hidden") {
+                    clearTimeout(fallbackTimer);
+                }
+            });
+
+            // 앱 호출
+            try {
+                window.location.href = REDIRECT_CONSTANTS.UNIVERSAL_LINK_BASE + code;
+            } catch (error) {
+                alert(REDIRECT_CONSTANTS.MSG_APP_NOT_INSTALLED);
+            }
         }
     </script>
 </body>
