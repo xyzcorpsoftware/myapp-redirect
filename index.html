@@ -36,6 +36,15 @@
         <div class="text">라운지엑스앱으로 이동 중이에요</div>
     </div>
     <script type="text/javascript">
+        const REDIRECT_CONSTANTS = {
+            UNIVERSAL_LINK_BASE: "https://link.xyzcorp.io/coupon?code=",
+            APP_STORE_URL_IOS: "https://apps.apple.com/app/1660500008",
+            APP_STORE_URL_AOS: "https://play.google.com/store/apps/details?id=io.xyz.xexpressapp",
+            FALLBACK_DELAY_MS: 3000,
+            MSG_APP_NOT_INSTALLED: "라운지엑스앱이 설치되어 있지 않아요\n잠시 후 앱 스토어로 이동할 예정이에요",
+            MSG_UNSUPPORTED_DEVICE: "This device is not supported. code: "
+        };
+
         function getQueryParams() {
             const params = new URLSearchParams(window.location.search);
             return {
@@ -45,22 +54,33 @@
 
         window.onload = function() {
             const params = getQueryParams();
-            const code = params.code;
-            
-            try {
-                window.location.href = "myapp://xyzcorp.io/coupon?code=" + code;
-            } catch (error) {
-                alert("라운지엑스앱이 설치되어 있지 않아요\n잠시 후 앱 스토어로 이동할 예정이에요")
-            }
-            setTimeout(function() {
-                if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                    window.location.href = "https://apps.apple.com/app/1660500008";
-                } else if (/Android/i.test(navigator.userAgent)) {
-                    window.location.href = "https://play.google.com/store/apps/details?id=io.xyz.xexpressapp";
+            const code = params.code || "";
+
+            // 3초 뒤 스토어 이동 타이머
+            let fallbackTimer = setTimeout(function() {
+                const userAgent = navigator.userAgent;
+                if (/iPhone|iPad|iPod/i.test(userAgent)) {
+                    window.location.href = REDIRECT_CONSTANTS.APP_STORE_URL_IOS;
+                } else if (/Android/i.test(userAgent)) {
+                    window.location.href = REDIRECT_CONSTANTS.APP_STORE_URL_AOS;
                 } else {
-                    alert("This device is not supported. code: " + code);
+                    alert(REDIRECT_CONSTANTS.MSG_UNSUPPORTED_DEVICE + code);
                 }
-            }, 3000);
+            }, REDIRECT_CONSTANTS.FALLBACK_DELAY_MS);
+
+            // 앱 켜지면 타이머 취소
+            document.addEventListener("visibilitychange", function () {
+                if (document.visibilityState === "hidden") {
+                    clearTimeout(fallbackTimer);
+                }
+            });
+
+            // 앱 호출
+            try {
+                window.location.href = REDIRECT_CONSTANTS.UNIVERSAL_LINK_BASE + code;
+            } catch (error) {
+                alert(REDIRECT_CONSTANTS.MSG_APP_NOT_INSTALLED);
+            }
         }
     </script>
 </body>
