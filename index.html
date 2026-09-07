@@ -28,12 +28,34 @@
             line-height: 1.1933;
             margin-top: 31px;
         }
+        .button {
+            display: block;
+            margin-top: 28px;
+            padding: 16px 20px;
+            background: #35383F;
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 18px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+        }
+        .store {
+            display: block;
+            margin-top: 16px;
+            color: #6B6F78;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        [hidden] { display: none !important; }
     </style>
 </head>
 <body>
     <div class="container">
         <img src="logo_symbol.png" alt="Logo" class="logo">
-        <div class="text">라운지엑스앱으로 이동 중이에요</div>
+        <div class="text" id="message">라운지엑스앱으로 이동 중이에요</div>
+        <a class="button" id="open-app" hidden>앱에서 쿠폰 받기</a>
+        <a class="store" id="install-app" hidden>앱이 없다면 설치하기</a>
     </div>
     <script type="text/javascript">
         const REDIRECT_CONSTANTS = {
@@ -41,6 +63,12 @@
             APP_STORE_URL_IOS: "https://apps.apple.com/app/1660500008",
             APP_STORE_URL_AOS: "https://play.google.com/store/apps/details?id=io.xyz.xexpressapp",
             FALLBACK_DELAY_MS: 3000,
+            MSG_TAP_TO_OPEN: "아래 버튼을 눌러 라운지엑스앱에서 쿠폰을 받으세요",
+            // Android only. One literal on purpose: the deeplink repo's navigation
+            // scanner (AP-2) validates this exact shape — https data address on a
+            // declared host, our package pinned, an https store fallback, `;end`.
+            // Split it across constants and the check can no longer see the whole.
+            ANDROID_INTENT_TEMPLATE: "intent://link.xyzcorp.io/coupon?code=CODE#Intent;scheme=https;package=io.xyz.xexpressapp;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dio.xyz.xexpressapp;end",
             MSG_APP_NOT_INSTALLED: "라운지엑스앱이 설치되어 있지 않아요\n잠시 후 앱 스토어로 이동할 예정이에요",
             MSG_UNSUPPORTED_DEVICE: "This device is not supported. code: "
         };
@@ -55,6 +83,29 @@
         window.onload = function() {
             const params = getQueryParams();
             const code = params.code || "";
+            const target = REDIRECT_CONSTANTS.UNIVERSAL_LINK_BASE + code;
+            // Android: nothing navigates by itself, and the button is an intent URL.
+            // Measured 2026-09-07 on a Galaxy S20 (Android 13, Samsung Internet) with
+            // the Play build installed and link.xyzcorp.io verified: the script-driven
+            // navigation below lands on the link.xyzcorp.io/coupon page and then the
+            // Play Store, the app never opens and the code is lost; a user-TAPPED plain
+            // https link stays in the browser too (Samsung Internet hands no tapped
+            // link to any app — a YouTube link did not open YouTube either). Only a
+            // package-pinned intent URL opened the app, and the app received the plain
+            // https address. The intent carries the same https address, pins our
+            // package (nothing else can claim it) and falls back to the Play page when
+            // the app is absent. iOS keeps the script-driven navigation because there
+            // it does open the app from a camera scan (measured the same day).
+            if (/Android/i.test(navigator.userAgent)) {
+                const openApp = document.getElementById("open-app");
+                openApp.href = REDIRECT_CONSTANTS.ANDROID_INTENT_TEMPLATE.replace("code=CODE", "code=" + encodeURIComponent(code));
+                openApp.hidden = false;
+                const install = document.getElementById("install-app");
+                install.href = REDIRECT_CONSTANTS.APP_STORE_URL_AOS;
+                install.hidden = false;
+                document.getElementById("message").textContent = REDIRECT_CONSTANTS.MSG_TAP_TO_OPEN;
+                return;
+            }
 
             // 3초 뒤 스토어 이동 타이머
             let fallbackTimer = setTimeout(function() {
@@ -77,7 +128,7 @@
 
             // 앱 호출
             try {
-                window.location.href = REDIRECT_CONSTANTS.UNIVERSAL_LINK_BASE + code;
+                window.location.href = target;
             } catch (error) {
                 alert(REDIRECT_CONSTANTS.MSG_APP_NOT_INSTALLED);
             }
